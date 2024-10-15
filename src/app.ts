@@ -8,10 +8,11 @@ import swaggerUI from '@fastify/swagger-ui'
 import { accountRoute } from './infra/http/routes/account-routes'
 import { errorHandler } from './infra/http/error-handle.ts/error-handle'
 import { resolve } from 'node:path'
+import cors from '@fastify/cors'
 
 export class App {
   server = fastify({
-    logger: false
+    logger: true
   })
 
   constructor () {
@@ -26,6 +27,11 @@ export class App {
     this.server.register(accountRoute)
   }
   plugins () {
+    this.server.register(cors, { 
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'accept', 'api_key']
+    })
     this.server.setSerializerCompiler(serializerCompiler)
     this.server.setValidatorCompiler(validatorCompiler)
     this.server.setErrorHandler(errorHandler)

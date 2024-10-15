@@ -1,14 +1,9 @@
 import { Email } from '../../../../domain/entities/email'
 import { Account } from '../../../../domain/entities/account'
-import { IAccountRepository } from '../../../../domain/repositories/account-repository'
-import { hashPassword, comparePassword } from '../../../lib/brcypt'
-import { generateToken } from '../../../lib/jwt'
+import { IAccountRepository, updateAccountType } from '../../../../domain/repositories/account-repository'
+import { hashPassword, comparePassword } from '../../../lib/bcrypt'
 import { accountModel } from '../model/account-model'
 
-interface TokenPayload {
-  uuid: string
-  email: string
-}
 
 export class AccountRepositoryMongoose implements IAccountRepository {
   async save (account: Account): Promise<void> {
@@ -17,7 +12,8 @@ export class AccountRepositoryMongoose implements IAccountRepository {
       uuid: account.uuid,
       name: account.name,
       email: account.email.value,
-      password: hashedPassword
+      password: hashedPassword,
+      isActive: account.isActive
     })
     acc.save()
   }
@@ -31,7 +27,8 @@ export class AccountRepositoryMongoose implements IAccountRepository {
       data.uuid,
       data.name,
       data.email,
-      data.password
+      data.password,
+      data.isActive
     )
     return acc
   }
@@ -39,7 +36,7 @@ export class AccountRepositoryMongoose implements IAccountRepository {
   async findByEmailPassword (
     email: Email,
     password: string
-  ): Promise<string | null> {
+  ): Promise<Account | null> {
     const data = await accountModel.findOne({ email: email.value })
     if (!data) {
       return null
@@ -50,17 +47,15 @@ export class AccountRepositoryMongoose implements IAccountRepository {
       return null
     }
 
-    const tokenPayload: TokenPayload = {
-      uuid: data.uuid,
-      email: data.email
-    }
-
-    const token = await generateToken(tokenPayload)
-    if (!token) {
-      return null
-    }
-
-    return token
+    const acc = Account.reconstitute(
+      data.uuid,
+      data.name,
+      data.email,
+      data.password,
+      data.isActive
+    )
+    return acc
+    
   }
 
   async updatePassword (email: string, password: string): Promise<void> {
@@ -69,5 +64,19 @@ export class AccountRepositoryMongoose implements IAccountRepository {
       { email },
       { $set: { password: hashedPassword } }
     )
+  }
+  async update (uuid: string, accountProps: updateAccountType): Promise<void> {
+    if('password' in accountProps){
+      const hashedPassword = hashPassword(accountProps.password as string)
+      await accountModel.updateOne(
+        { uuid },
+        { $set: { ...accountProps, password: hashedPassword } }
+      )
+    }
+    await accountModel.updateOne(
+      { uuid },
+      { $set: { ...accountProps } }
+    )
+
   }
 }

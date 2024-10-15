@@ -17,4 +17,4 @@ function generateToken (
   return jwt.sign(payload, secretKey, { expiresIn })
 }
 
-export { generateToken }
+export { generateToken, TokenPayload }

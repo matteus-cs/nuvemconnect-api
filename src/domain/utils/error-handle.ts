@@ -11,6 +11,12 @@ export class ErrorHandle extends Error {
 }
 
 
+export class UnprocessableEntityError extends ErrorHandle {
+  constructor (message: string) {
+    super(422, message)
+  }
+}
+
 export class BadRequestError extends ErrorHandle {
   constructor (message: string) {
     super(400, message)
@@ -24,4 +30,5 @@ export class NotFoundError extends ErrorHandle {
 export class InternalServerError extends ErrorHandle {
   constructor (message: string) {
     super(500, message)
-  }}
+  }
+}

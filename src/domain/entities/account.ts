@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { Replace } from '../utils/replace'
 import { Email } from './email'
-import { BadRequestError } from '../utils/error-handle'
+import { UnprocessableEntityError } from '../utils/error-handle'
 
 export interface AccountProps {
   uuid: string
@@ -9,6 +9,7 @@ export interface AccountProps {
   email: Email
   password: string
   token?: string
+  isActive: boolean
 }
 export class Account {
   private props: AccountProps
@@ -18,26 +19,28 @@ export class Account {
       name: props.name,
       email: props.email,
       password: props.password,
-      token: props.token
+      token: props.token,
+      isActive: props.isActive
     }
   }
 
-  public static create (name: string, email: string, password: string): Account {
-    if (!this.isValidPassword(password))
-      throw new BadRequestError('Password does not meet the required criteria')
-    return new Account({ name, email: new Email(email), password })
+  public static create (name: string, email: string, password: string, isActive?: boolean | null): Account {
+    if (!Account.isValidPassword(password))
+      throw new UnprocessableEntityError('Password does not meet the required criteria')
+    return new Account({ name, email: new Email(email), password, isActive: isActive ?? false })
   }
 
   public static reconstitute (
     uuid: string,
     name: string,
     email: string,
-    password: string
+    password: string,
+    isActive: boolean
   ) {
-    return new Account({ uuid, name, email: new Email(email), password })
+    return new Account({ uuid, name, email: new Email(email), password, isActive })
   }
 
-  private static isValidPassword (password: string) {
+  static isValidPassword (password: string) {
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/
     return passwordRegex.test(password)
@@ -69,7 +72,7 @@ export class Account {
 
   set password (password: string) {
     if (!Account.isValidPassword(password))
-      throw new BadRequestError('Password does not meet the required criteria')
+      throw new UnprocessableEntityError('Password does not meet the required criteria')
     this.props.password = password
   }
 
@@ -79,5 +82,13 @@ export class Account {
 
   set token (token: string) {
     this.props.token = token
+  }
+
+  get isActive (): boolean {
+    return this.props.isActive
+  }
+  
+  set isActive (isActive: boolean) {
+    this.props.isActive = isActive
   }
 }

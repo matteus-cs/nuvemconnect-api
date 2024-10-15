@@ -16,7 +16,8 @@ describe('Account entity', () => {
       'Fake name',
       'fake-uuid-93892',
       'fake@email.com',
-      'F@k3Password'
+      'F@k3Password',
+      true
     )
 
     expect(account).instanceOf(Account)

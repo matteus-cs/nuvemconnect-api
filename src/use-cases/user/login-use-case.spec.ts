@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { InMemoryAccountRepository } from '../../../test/repositories/in-memory-account-repository'
 import { LoginUseCase } from './login-use-case'
 import { Account } from '../../domain/entities/account'
 import { Email } from '../../domain/entities/email'
+import * as utils from '../../infra/lib/jwt'
 
 describe('LoginUseCase', () => {
   let accountRepository: InMemoryAccountRepository
@@ -18,21 +19,16 @@ describe('LoginUseCase', () => {
     const email = new Email('test@example.com')
     const password = 'securePassword1!'
 
-    const account = Account.create(name, email.value, password)
+
+    const mockGenerateToken = vi.spyOn(utils, 'generateToken').mockResolvedValue('valid-token')
+
+    const account = Account.create(name, email.value, password, true)
     await accountRepository.save(account)
 
-    accountRepository.findByEmailPassword = async (
-      email: Email,
-      password: string
-    ) => {
-      const account = await accountRepository.findByEmail(email.value)
-      if (account && account.password === password) {
-        return 'valid-token'
-      }
-      return null
-    }
+
 
     const token = await loginUseCase.execute({ email: email.value, password })
+    expect(mockGenerateToken).toHaveBeenLastCalledWith({ uuid: account.uuid, email: email.value })
     expect(token).toBe('valid-token')
   })
 
@@ -44,17 +40,6 @@ describe('LoginUseCase', () => {
 
     const account = Account.create(name, email.value, password)
     await accountRepository.save(account)
-
-    accountRepository.findByEmailPassword = async (
-      email: Email,
-      password: string
-    ) => {
-      const account = await accountRepository.findByEmail(email.value)
-      if (account && account.password === password) {
-        return 'valid-token'
-      }
-      return null
-    }
 
     await expect(
       loginUseCase.execute({ email: email.value, password: wrongPassword })
