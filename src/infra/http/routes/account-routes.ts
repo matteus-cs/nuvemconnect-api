@@ -185,7 +185,8 @@ export async function accountRoute (fastify: FastifyInstance) {
         }
       }
       const accessToken = generateToken({ email: account.email.value, uuid: account.uuid })
-      return reply.status(200).send({ accessToken })
+      const urlFrontend = <string>process.env.URL_FRONTEND 
+      return reply.redirect(`${urlFrontend}/login?accessToken=${accessToken}`)
 
     })
 
