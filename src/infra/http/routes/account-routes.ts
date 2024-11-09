@@ -133,8 +133,8 @@ export async function accountRoute (fastify: FastifyInstance) {
 
       await updateAccountUseCase.execute(req.params.uuid, { isActive: true })
 
-      res.status(200).send()
 
+      res.header('Location', 'https://nuvemconnect.vercel.app/login?emailConfirmed=true').code(302).send()
     }
   )
 
