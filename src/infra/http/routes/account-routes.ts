@@ -10,11 +10,12 @@ import { RequestPasswordResetUseCase } from '../../../use-cases/user/request-pas
 import { MailtrapSendEmail } from '../../lib/mail-trap-send-email'
 import { PasswordResetTokenRepositoryMongoose } from '../../database/mongoose/repositories/password-reset-token-repository-mongoose'
 import { UpdateAccountUseCase } from '../../../use-cases/user/update-account-use-case'
-import { getUserInfo, oauth2Client } from '../../lib/google-api'
+import { oauth2Client } from '../../lib/google-api'
 import { FindByEmail } from '../../../use-cases/user/find-by-email'
 import { generateRandomPassword } from '../../../domain/utils/generate-random-password'
 import { generateToken } from '../../lib/jwt'
 import { Email } from '../../../domain/entities/email'
+import 'dotenv/config'
 
 export async function accountRoute (fastify: FastifyInstance) {
   fastify.withTypeProvider<ZodTypeProvider>().post(
@@ -138,56 +139,46 @@ export async function accountRoute (fastify: FastifyInstance) {
     }
   )
 
-  fastify.withTypeProvider<ZodTypeProvider>().get('/login/google', (req, reply) => {
-    const url = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: ['https://www.googleapis.com/auth/userinfo.email', 
-        'https://www.googleapis.com/auth/userinfo.profile']
-    })
-
-    reply.redirect(url)
-  })
-
-  fastify.withTypeProvider<ZodTypeProvider>().get(
-    '/auth/google/callback',
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    '/login/google',
     {
       schema: {
-        querystring: z.object({
+        body: z.object({
           code: z.string()
         })
       }
     },
     async (req, reply) => {
 
-      const { code } = req.query
-
-      const { tokens } = await oauth2Client.getToken(code)
-
-      const userInfo = await getUserInfo(tokens.access_token as string, tokens.refresh_token as string)
-
+      const { code } = req.body
+      const token = await oauth2Client.verifyIdToken({
+        idToken: code,
+        audience: process.env.CLIENT_ID
+      })
+      const tokenInfo = token.getPayload()
+      if(!tokenInfo){
+        throw new UnprocessableEntityError('invalid access token')
+      }
       const accountRepository = new AccountRepositoryMongoose()
       let account
       try {      
         const findAccountByEmailUseCase = new FindByEmail(accountRepository)
-        account = await findAccountByEmailUseCase.execute(new Email(userInfo.email as string))
+        account = await findAccountByEmailUseCase.execute(new Email(tokenInfo.email as string))
       } catch (error) {
         if(error instanceof NotFoundError){
           const password = await generateRandomPassword(8)
           const createAccountUseCase = new CreateAccountUseCase(accountRepository)
           account = await createAccountUseCase.execute({
-            email: userInfo.email as string, 
-            name: userInfo.name as string,
+            email: tokenInfo.email as string, 
+            name: tokenInfo.name as string,
             password: password,
-            isActive: userInfo.verified_email ?? null
+            isActive: tokenInfo.email_verified ?? false
           })
         } else {
           throw error
         }
       }
       const accessToken = generateToken({ email: account.email.value, uuid: account.uuid })
-      const urlFrontend = <string>process.env.URL_FRONTEND 
-      return reply.redirect(`${urlFrontend}/login?accessToken=${accessToken}`)
-
+      reply.status(200).send({ accessToken })
     })
-
 }
