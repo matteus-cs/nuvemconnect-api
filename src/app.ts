@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import {
   serializerCompiler,
-  validatorCompiler
+  validatorCompiler,
 } from 'fastify-type-provider-zod'
 import swagger from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
@@ -12,12 +12,13 @@ import cors from '@fastify/cors'
 
 export class App {
   server = fastify({
-    logger: true
+    logger: true,
   })
 
   constructor () {
     this.plugins()
     this.routes()
+    this.setSecurityHeaders()
   }
 
   routes () {
@@ -27,10 +28,10 @@ export class App {
     this.server.register(accountRoute)
   }
   plugins () {
-    this.server.register(cors, { 
+    this.server.register(cors, {
       origin: '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'accept', 'api_key']
+      allowedHeaders: ['Content-Type', 'Authorization', 'accept', 'api_key'],
     })
     this.server.setSerializerCompiler(serializerCompiler)
     this.server.setValidatorCompiler(validatorCompiler)
@@ -43,11 +44,20 @@ export class App {
         postProcessor: function (swaggerObject) {
           return swaggerObject
         },
-        baseDir: resolve()
-      }
+        baseDir: resolve(),
+      },
     })
     this.server.register(swaggerUI, {
-      routePrefix: '/docs'
+      routePrefix: '/docs',
+    })
+  }
+
+  setSecurityHeaders () {
+    // Adiciona os cabeçalhos de segurança usando o hook onRequest
+    this.server.addHook('onRequest', (request, reply, done) => {
+      reply.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
+      reply.header('Cross-Origin-Embedder-Policy', 'require-corp')
+      done()
     })
   }
 }
