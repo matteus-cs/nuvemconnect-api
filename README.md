@@ -18,21 +18,21 @@
    - https://docs.docker.com/engine/install/
 
 ```bash
-# 3. instalar pnpm
+# 3 Clonar repositório - Branch: Main
+git clone https://github.com/NuvemConnect/nuvemconnect-api.git
+
+# 4. instalar pnpm
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 # ou
 npm install -g pnpm
 
-# 4. instalar dependências
+# 5. instalar dependências
 pnpm install
 
-# 5. criar um arquivo .env com as variáveis de .env-example
+# 6. criar um arquivo .env com as variáveis de .env-example
 
-# 6. iniciar docker
+# 7. iniciar docker
 docker compose up -d
-
-# 7. iniciar servidor
-pnpm run dev
 
 # Testes
 pnpm test
