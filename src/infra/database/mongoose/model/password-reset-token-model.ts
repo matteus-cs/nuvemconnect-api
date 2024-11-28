@@ -15,4 +15,4 @@ const schema = new Schema({
 
 schema.index({ createdAt: 1 }, { expireAfterSeconds: 1800 })
 
-export const PasswordResetTokenModel = model<Replace<PasswordResetToken, {email: string}>>('>PasswordResetToken', schema)
+export const PasswordResetTokenModel = model<Replace<PasswordResetToken, {email: string}>>('PasswordResetToken', schema)

@@ -73,9 +73,9 @@ export class CreateAccountUseCase {
   
                   <p style="font-size: 0.875rem; margin: 0 0 1.875rem 0;">Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.</p>
                   
-                  <div style="background-color: #1D89DA; margin: 0 auto; padding: 1rem 4.5625rem; border-radius: 6.25rem;">
-                      <a href= "${process.env.URL_API}/account/activate/${account.uuid}" style="color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 1.125rem;">CONFIRMAR EMAIL</a>
-                  </div>
+                 <a href="${process.env.URL_API}/account/activate/${account.uuid}" style="background-color: #1D89DA; margin: 0 auto; padding: 1rem 4.5625rem; border-radius: 6.25rem; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 1.125rem; line-height: 1.125rem; display: inline-block; text-align: center;">
+                    CONFIRMAR EMAIL
+                  </a>
   
                   <p style="color: #6A7686; font-size: 0.875rem; margin: 2.25rem 0 6.75rem 0;">
                       se você recebeu isso por engano, simplesmente ignore este e-mail e não clique no botão.
