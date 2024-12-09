@@ -13,7 +13,11 @@ import { RequestPasswordResetUseCase } from '../../../use-cases/user/request-pas
 import { MailtrapSendEmail } from '../../lib/mail-trap-send-email'
 import { PasswordResetTokenRepositoryMongoose } from '../../database/mongoose/repositories/password-reset-token-repository-mongoose'
 import { UpdateAccountUseCase } from '../../../use-cases/user/update-account-use-case'
-import { oauth2Client, getAccountCloudInfo } from '../../lib/google-api'
+import {
+  oauth2Client,
+  oauth2ClientDrive,
+  getAccountCloudInfo
+} from '../../lib/google-api'
 import { FindByEmail } from '../../../use-cases/user/find-by-email'
 import { generateRandomPassword } from '../../../domain/utils/generate-random-password'
 import { generateToken } from '../../lib/jwt'
@@ -215,8 +219,8 @@ export async function accountRoute (fastify: FastifyInstance) {
   fastify
     .withTypeProvider<ZodTypeProvider>()
     .get('/auth/google-drive', (req, reply) => {
-      const scopes = ['https://www.googleapis.com/auth/drive.file']
-      const url = oauth2Client.generateAuthUrl({
+      const scopes = ['https://www.googleapis.com/auth/drive']
+      const url = oauth2ClientDrive.generateAuthUrl({
         access_type: 'offline',
         scope: scopes
       })
@@ -236,8 +240,8 @@ export async function accountRoute (fastify: FastifyInstance) {
       const { code } = req.query
 
       const { tokens, userEmail } = await getAccountCloudInfo(code)
-      if (!tokens || !tokens.access_token || !tokens.refresh_token) {
-        throw new Error('Invalid Google tokens')
+      if (!tokens || !tokens.access_token) {
+        throw new Error('Tokens do Google inválidos.')
       }
       const cloudAccountRepository = new CloudAccountRepositoryMongoose()
       const expiryDate = tokens.expiry_date
@@ -248,14 +252,14 @@ export async function accountRoute (fastify: FastifyInstance) {
         userEmail,
         'google-drive',
         tokens.access_token,
-        tokens.refresh_token,
-        expiryDate
+        expiryDate,
+        tokens.refresh_token as string
       )
       await cloudAccountRepository.save(cloudAccount)
 
       reply
         .status(200)
-        .send({ message: 'Google Drive account connected successfully' })
+        .send({ message: 'Conta do Google Drive conectada com sucesso' })
     }
   )
 }

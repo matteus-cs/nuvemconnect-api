@@ -2,8 +2,14 @@ import { google } from 'googleapis'
 import 'dotenv/config'
 
 interface GoogleUser {
-  email: string
+  emailAddress: string
 }
+
+export const oauth2ClientDrive = new google.auth.OAuth2({
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET_KEY,
+  redirectUri: process.env.GOOGLE_REDIRECT_URL_DRIVE
+})
 
 export const oauth2Client = new google.auth.OAuth2({
   clientId: process.env.CLIENT_ID,
@@ -38,23 +44,22 @@ export async function getUserInfo (accessToken: string, refreshToken: string) {
 
 export async function getAccountCloudInfo (code: string) {
   try {
-    const { tokens } = await oauth2Client.getToken(code)
-
-    if (!tokens || !tokens.access_token || !tokens.refresh_token) {
-      throw new Error('Invalid Google tokens')
+    const { tokens } = await oauth2ClientDrive.getToken(code)
+    if (!tokens || !tokens.access_token) {
+      throw new Error('Tokens do Google inválidos.')
     }
 
-    oauth2Client.setCredentials(tokens)
-    const drive = google.drive({ version: 'v3', auth: oauth2Client })
+    oauth2ClientDrive.setCredentials(tokens)
+    const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
     const response = await drive.about.get({ fields: 'user' })
     const userInfo = response.data.user as GoogleUser
-    if (!response.data.user || !userInfo.email) {
-      throw new Error('User info or email is not available')
+    if (!response.data.user || !userInfo.emailAddress) {
+      throw new Error('Informações do usuário ou e-mail não estão disponíveis.')
     }
 
     return {
       tokens,
-      userEmail: userInfo.email
+      userEmail: userInfo.emailAddress
     }
   } catch (error) {
     console.error('Erro ao buscar informações do usuário:', error)

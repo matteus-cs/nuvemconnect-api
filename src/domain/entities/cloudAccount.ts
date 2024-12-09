@@ -16,15 +16,18 @@ export class CloudAccount {
   private props: CloudAccountProps
 
   private constructor (
-    props: Replace<CloudAccountProps, { uuid?: string; createdAt?: Date }>
+    props: Replace<
+      CloudAccountProps,
+      { uuid?: string; createdAt?: Date; refreshToken?: string }
+    >
   ) {
     this.props = {
       uuid: props.uuid ?? randomUUID(),
       userId: props.userId,
       provider: props.provider,
       accessToken: props.accessToken,
-      refreshToken: props.refreshToken,
       expiryDate: props.expiryDate,
+      refreshToken: props.refreshToken ?? '',
       createdAt: props.createdAt ?? new Date()
     }
   }
@@ -33,10 +36,10 @@ export class CloudAccount {
     userId: string,
     provider: string,
     accessToken: string,
-    refreshToken: string,
-    expiryDate: Date
+    expiryDate: Date,
+    refreshToken?: string
   ): CloudAccount {
-    if (!accessToken || !refreshToken) {
+    if (!accessToken) {
       throw new UnprocessableEntityError('Access or Refresh token is missing')
     }
     return new CloudAccount({
