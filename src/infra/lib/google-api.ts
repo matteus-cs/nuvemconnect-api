@@ -1,4 +1,5 @@
-import { google } from 'googleapis'
+import { google, drive_v3 } from 'googleapis'
+import { GaxiosResponse } from 'gaxios'
 import 'dotenv/config'
 
 interface GoogleUser {
@@ -91,4 +92,26 @@ export async function manageOauthTokens (
 
     return { credentials, newExpiryDate }
   }
+}
+
+export async function listFiles () {
+  const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
+
+  let allFiles: drive_v3.Schema$File[] = []
+
+  let nextPageToken
+  do {
+    const response: GaxiosResponse<drive_v3.Schema$FileList> =
+      await drive.files.list({
+        pageSize: 100,
+        fields: 'nextPageToken, files(id, name, mimeType)',
+        pageToken: nextPageToken
+      })
+
+    const files = response.data.files || []
+    allFiles = allFiles.concat(files)
+    nextPageToken = response.data.nextPageToken || undefined
+  } while (nextPageToken)
+
+  return allFiles
 }

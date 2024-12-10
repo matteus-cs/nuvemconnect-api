@@ -19,12 +19,12 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
 
   async create (cloudAccount: CloudAccount) {
     const {
+      _id,
       userEmail,
       provider,
       accessToken,
-      refreshToken,
       expiryDate,
-      _id,
+      refreshToken,
       createdAt
     } = cloudAccount.getProps()
     const newCloudAccount = new CloudAccountModel({
@@ -32,8 +32,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
       userEmail,
       provider,
       accessToken,
-      refreshToken,
       expiryDate,
+      refreshToken,
       createdAt
     })
     await newCloudAccount.save()
@@ -60,8 +60,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
       userEmail,
       provider,
       accessToken,
-      refreshToken,
       expiryDate,
+      refreshToken,
       createdAt
     } = cloudAccount.getProps()
 
@@ -72,8 +72,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
         userEmail,
         provider,
         accessToken,
-        refreshToken,
         expiryDate,
+        refreshToken,
         createdAt
       },
       { upsert: true, new: true }

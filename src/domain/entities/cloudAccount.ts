@@ -7,8 +7,8 @@ export interface CloudAccountProps {
   userEmail: string
   provider: string
   accessToken: string
-  refreshToken: string
   expiryDate: Date
+  refreshToken: string
   createdAt: Date
 }
 
@@ -46,8 +46,8 @@ export class CloudAccount {
       userEmail,
       provider,
       accessToken,
-      refreshToken,
-      expiryDate
+      expiryDate,
+      refreshToken
     })
   }
 

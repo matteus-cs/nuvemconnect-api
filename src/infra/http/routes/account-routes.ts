@@ -5,7 +5,9 @@ import { CreateAccountUseCase } from '../../../use-cases/user/create-account-use
 import { AccountRepositoryMongoose } from '../../database/mongoose/repositories/account-repository-mongoose'
 import {
   NotFoundError,
-  UnprocessableEntityError
+  UnprocessableEntityError,
+  BadRequestError,
+  InternalServerError
 } from '../../../domain/utils/error-handle'
 import { LoginUseCase } from '../../../use-cases/user/login-use-case'
 import { resetPasswordUseCase } from '../../../use-cases/user/reset-password-use-case'
@@ -17,9 +19,9 @@ import {
   oauth2Client,
   oauth2ClientDrive,
   getAccountCloudInfo,
-  manageOauthTokens
+  manageOauthTokens,
+  listFiles
 } from '../../lib/google-api'
-import { google } from 'googleapis'
 import { FindByEmail } from '../../../use-cases/user/find-by-email'
 import { generateRandomPassword } from '../../../domain/utils/generate-random-password'
 import { generateToken } from '../../lib/jwt'
@@ -239,29 +241,34 @@ export async function accountRoute (fastify: FastifyInstance) {
       }
     },
     async (req, reply) => {
-      const { code } = req.query
+      try {
+        const { code } = req.query
 
-      const { tokens, userEmail } = await getAccountCloudInfo(code)
-      if (!tokens || !tokens.access_token) {
-        throw new Error('Tokens do Google inválidos.')
+        const { tokens, userEmail } = await getAccountCloudInfo(code)
+        if (!tokens || !tokens.access_token) {
+          throw new UnprocessableEntityError('Tokens do Google inválidos.')
+        }
+        const cloudAccountRepository = new CloudAccountRepositoryMongoose()
+        const expiryDate = tokens.expiry_date
+          ? new Date(tokens.expiry_date)
+          : new Date()
+        const cloudAccount = CloudAccount.create(
+          userEmail,
+          'google-drive',
+          tokens.access_token,
+          expiryDate,
+          tokens.refresh_token as string
+        )
+        await cloudAccountRepository.save(cloudAccount)
+
+        reply
+          .status(200)
+          .send({ message: 'Conta do Google Drive conectada com sucesso' })
+      } catch (error) {
+        throw new InternalServerError(
+          'Erro ao conectar a conta do Google Drive: ' + error
+        )
       }
-      const cloudAccountRepository = new CloudAccountRepositoryMongoose()
-      const expiryDate = tokens.expiry_date
-        ? new Date(tokens.expiry_date)
-        : new Date()
-
-      const cloudAccount = CloudAccount.create(
-        userEmail,
-        'google-drive',
-        tokens.access_token,
-        expiryDate,
-        tokens.refresh_token as string
-      )
-      await cloudAccountRepository.save(cloudAccount)
-
-      reply
-        .status(200)
-        .send({ message: 'Conta do Google Drive conectada com sucesso' })
     }
   )
 
@@ -279,8 +286,8 @@ export async function accountRoute (fastify: FastifyInstance) {
       try {
         const { userEmail, provider } = req.body
         if (!userEmail || !provider) {
-          throw new UnprocessableEntityError(
-            'User email and provider is required.'
+          throw new BadRequestError(
+            'O e-mail do usuário e o provedor são obrigatórios.'
           )
         }
 
@@ -290,9 +297,10 @@ export async function accountRoute (fastify: FastifyInstance) {
             userEmail,
             provider
           )
+        console.log(cloudAccount)
         if (!cloudAccount) {
-          throw new UnprocessableEntityError(
-            'User email and provider is required.'
+          throw new NotFoundError(
+            'Conta não encontrada com as credenciais fornecidas.'
           )
         }
 
@@ -307,18 +315,22 @@ export async function accountRoute (fastify: FastifyInstance) {
           response?.newExpiryDate
         )
 
-        const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
+        const files = await listFiles()
 
-        const res = await drive.files.list({
-          pageSize: 10,
-          fields: 'nextPageToken, files(id, name)'
-        })
+        // const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
 
-        console.log('Files:', res.data.files)
-        reply.status(200).send(res.data.files)
+        // const res = await drive.files.list({
+        //   pageSize: 10,
+        //   fields: 'nextPageToken, files(id, name)'
+        // })
+
+        // reply.status(200).send(res.data.files)
+
+        reply.status(200).send(files)
       } catch (error) {
-        console.error('Erro ao buscar arquivos:', error)
-        throw error
+        throw new InternalServerError(
+          'Erro ao buscar os arquivos do Google Drive: ' + error
+        )
       }
     }
   )
