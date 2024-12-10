@@ -104,6 +104,7 @@ export async function listFiles () {
     const response: GaxiosResponse<drive_v3.Schema$FileList> =
       await drive.files.list({
         pageSize: 100,
+        orderBy: 'name',
         fields: 'nextPageToken, files(id, name, mimeType)',
         pageToken: nextPageToken
       })
