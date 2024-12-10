@@ -24,10 +24,22 @@ export class Account {
     }
   }
 
-  public static create (name: string, email: string, password: string, isActive?: boolean | null): Account {
+  public static create (
+    name: string,
+    email: string,
+    password: string,
+    isActive?: boolean | null
+  ): Account {
     if (!Account.isValidPassword(password))
-      throw new UnprocessableEntityError('Password does not meet the required criteria')
-    return new Account({ name, email: new Email(email), password, isActive: isActive ?? false })
+      throw new UnprocessableEntityError(
+        'Password does not meet the required criteria'
+      )
+    return new Account({
+      name,
+      email: new Email(email),
+      password,
+      isActive: isActive ?? false
+    })
   }
 
   public static reconstitute (
@@ -37,7 +49,13 @@ export class Account {
     password: string,
     isActive: boolean
   ) {
-    return new Account({ uuid, name, email: new Email(email), password, isActive })
+    return new Account({
+      uuid,
+      name,
+      email: new Email(email),
+      password,
+      isActive
+    })
   }
 
   static isValidPassword (password: string) {
@@ -72,7 +90,9 @@ export class Account {
 
   set password (password: string) {
     if (!Account.isValidPassword(password))
-      throw new UnprocessableEntityError('Password does not meet the required criteria')
+      throw new UnprocessableEntityError(
+        'Password does not meet the required criteria'
+      )
     this.props.password = password
   }
 
@@ -87,7 +107,7 @@ export class Account {
   get isActive (): boolean {
     return this.props.isActive
   }
-  
+
   set isActive (isActive: boolean) {
     this.props.isActive = isActive
   }

@@ -16,8 +16,10 @@ import { UpdateAccountUseCase } from '../../../use-cases/user/update-account-use
 import {
   oauth2Client,
   oauth2ClientDrive,
-  getAccountCloudInfo
+  getAccountCloudInfo,
+  manageOauthTokens
 } from '../../lib/google-api'
+import { google } from 'googleapis'
 import { FindByEmail } from '../../../use-cases/user/find-by-email'
 import { generateRandomPassword } from '../../../domain/utils/generate-random-password'
 import { generateToken } from '../../lib/jwt'
@@ -260,6 +262,64 @@ export async function accountRoute (fastify: FastifyInstance) {
       reply
         .status(200)
         .send({ message: 'Conta do Google Drive conectada com sucesso' })
+    }
+  )
+
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    '/google-drive/list-files',
+    {
+      schema: {
+        body: z.object({
+          userEmail: z.string().email(),
+          provider: z.string()
+        })
+      }
+    },
+    async (req, reply) => {
+      try {
+        const { userEmail, provider } = req.body
+        if (!userEmail || !provider) {
+          throw new UnprocessableEntityError(
+            'User email and provider is required.'
+          )
+        }
+
+        const cloudAccountRepository = new CloudAccountRepositoryMongoose()
+        const cloudAccount =
+          await cloudAccountRepository.findByUserEmailAndProvider(
+            userEmail,
+            provider
+          )
+        if (!cloudAccount) {
+          throw new UnprocessableEntityError(
+            'User email and provider is required.'
+          )
+        }
+
+        const response = await manageOauthTokens(
+          cloudAccount.accessToken,
+          cloudAccount.refreshToken
+        )
+        cloudAccountRepository.updateTokens(
+          cloudAccount._id,
+          response?.credentials.access_token as string,
+          response?.credentials.refresh_token as string,
+          response?.newExpiryDate
+        )
+
+        const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
+
+        const res = await drive.files.list({
+          pageSize: 10,
+          fields: 'nextPageToken, files(id, name)'
+        })
+
+        console.log('Files:', res.data.files)
+        reply.status(200).send(res.data.files)
+      } catch (error) {
+        console.error('Erro ao buscar arquivos:', error)
+        throw error
+      }
     }
   )
 }

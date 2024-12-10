@@ -3,8 +3,8 @@ import { Replace } from '../utils/replace'
 import { UnprocessableEntityError } from '../utils/error-handle'
 
 export interface CloudAccountProps {
-  uuid: string
-  userId: string
+  _id: string
+  userEmail: string
   provider: string
   accessToken: string
   refreshToken: string
@@ -18,12 +18,12 @@ export class CloudAccount {
   private constructor (
     props: Replace<
       CloudAccountProps,
-      { uuid?: string; createdAt?: Date; refreshToken?: string }
+      { _id?: string; createdAt?: Date; refreshToken?: string }
     >
   ) {
     this.props = {
-      uuid: props.uuid ?? randomUUID(),
-      userId: props.userId,
+      _id: props._id ?? randomUUID(),
+      userEmail: props.userEmail,
       provider: props.provider,
       accessToken: props.accessToken,
       expiryDate: props.expiryDate,
@@ -33,7 +33,7 @@ export class CloudAccount {
   }
 
   public static create (
-    userId: string,
+    userEmail: string,
     provider: string,
     accessToken: string,
     expiryDate: Date,
@@ -43,7 +43,7 @@ export class CloudAccount {
       throw new UnprocessableEntityError('Access or Refresh token is missing')
     }
     return new CloudAccount({
-      userId,
+      userEmail,
       provider,
       accessToken,
       refreshToken,
