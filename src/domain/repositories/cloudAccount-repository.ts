@@ -1,8 +1,8 @@
 import { CloudAccount, CloudAccountProps } from '../entities/cloudAccount'
 
 export interface ICloudAccountRepository {
-  findByUserIdAndProvider(
-    userId: string,
+  findByUserEmailAndProvider(
+    userEmail: string,
     provider: string
   ): Promise<CloudAccountProps | null>
   create(cloudAccount: CloudAccount): Promise<void>

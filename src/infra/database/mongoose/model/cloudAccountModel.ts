@@ -4,8 +4,8 @@ import { CloudAccountProps } from '../../../../domain/entities/cloudAccount'
 export const CloudAccountModel = model<CloudAccountProps>(
   'CloudAccount',
   new Schema({
-    uuid: { type: String, required: true },
-    userId: { type: String, required: true },
+    _id: { type: String, required: true },
+    userEmail: { type: String, required: true },
     provider: { type: String, required: true },
     accessToken: { type: String, required: true },
     refreshToken: { type: String, required: true },

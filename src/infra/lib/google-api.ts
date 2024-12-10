@@ -1,4 +1,5 @@
-import { google } from 'googleapis'
+import { google, drive_v3 } from 'googleapis'
+import { GaxiosResponse } from 'gaxios'
 import 'dotenv/config'
 
 interface GoogleUser {
@@ -65,4 +66,53 @@ export async function getAccountCloudInfo (code: string) {
     console.error('Erro ao buscar informações do usuário:', error)
     throw error
   }
+}
+
+export async function manageOauthTokens (
+  accessToken: string,
+  refreshToken: string
+) {
+  oauth2ClientDrive.setCredentials({
+    access_token: accessToken,
+    refresh_token: refreshToken
+  })
+  const tokenIsValid =
+    oauth2ClientDrive.credentials.expiry_date &&
+    oauth2ClientDrive.credentials.expiry_date > Date.now()
+
+  if (!tokenIsValid) {
+    console.log('Token expired. Trying to refresh...')
+
+    await oauth2ClientDrive.refreshAccessToken()
+    const { credentials } = await oauth2ClientDrive.refreshAccessToken()
+
+    const newExpiryDate = credentials.expiry_date
+      ? new Date(Date.now() + credentials.expiry_date * 1000)
+      : new Date()
+
+    return { credentials, newExpiryDate }
+  }
+}
+
+export async function listFiles () {
+  const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
+
+  let allFiles: drive_v3.Schema$File[] = []
+
+  let nextPageToken
+  do {
+    const response: GaxiosResponse<drive_v3.Schema$FileList> =
+      await drive.files.list({
+        pageSize: 100,
+        orderBy: 'name',
+        fields: 'nextPageToken, files(id, name, mimeType)',
+        pageToken: nextPageToken
+      })
+
+    const files = response.data.files || []
+    allFiles = allFiles.concat(files)
+    nextPageToken = response.data.nextPageToken || undefined
+  } while (nextPageToken)
+
+  return allFiles
 }
