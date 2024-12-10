@@ -66,3 +66,29 @@ export async function getAccountCloudInfo (code: string) {
     throw error
   }
 }
+
+export async function manageOauthTokens (
+  accessToken: string,
+  refreshToken: string
+) {
+  oauth2ClientDrive.setCredentials({
+    access_token: accessToken,
+    refresh_token: refreshToken
+  })
+  const tokenIsValid =
+    oauth2ClientDrive.credentials.expiry_date &&
+    oauth2ClientDrive.credentials.expiry_date > Date.now()
+
+  if (!tokenIsValid) {
+    console.log('Token expired. Trying to refresh...')
+
+    await oauth2ClientDrive.refreshAccessToken()
+    const { credentials } = await oauth2ClientDrive.refreshAccessToken()
+
+    const newExpiryDate = credentials.expiry_date
+      ? new Date(Date.now() + credentials.expiry_date * 1000)
+      : new Date()
+
+    return { credentials, newExpiryDate }
+  }
+}
