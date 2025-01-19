@@ -1,3 +1,4 @@
+//#region  imports
 import { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
@@ -17,7 +18,6 @@ import { PasswordResetTokenRepositoryMongoose } from '../../database/mongoose/re
 import { UpdateAccountUseCase } from '../../../use-cases/user/update-account-use-case'
 import {
   oauth2Client,
-  oauth2ClientDrive,
   getAccountCloudInfo,
   manageOauthTokens,
   listFiles
@@ -29,8 +29,18 @@ import { Email } from '../../../domain/entities/email'
 import 'dotenv/config'
 import { CloudAccount } from '../../../domain/entities/cloudAccount'
 import { CloudAccountRepositoryMongoose } from '../../database/mongoose/repositories/cloudAccount-repository-mongoose'
+import { authorizationMiddleware } from '../middleware/authorization-middleware'
+
+//#endregion
 
 export async function accountRoute (fastify: FastifyInstance) {
+  //#region  account
+  fastify.get(
+    '/account/logged',
+    { preHandler: authorizationMiddleware },
+    (req, res)  => {
+      res.status(200).send(req.account)
+    } )
   fastify.withTypeProvider<ZodTypeProvider>().post(
     '/account',
     {
@@ -220,31 +230,34 @@ export async function accountRoute (fastify: FastifyInstance) {
     }
   )
 
-  fastify
-    .withTypeProvider<ZodTypeProvider>()
-    .get('/auth/google-drive', (req, reply) => {
-      const scopes = ['https://www.googleapis.com/auth/drive']
-      const url = oauth2ClientDrive.generateAuthUrl({
-        access_type: 'offline',
-        scope: scopes
-      })
-      reply.redirect(url)
-    })
+  //#endregion
 
-  fastify.withTypeProvider<ZodTypeProvider>().get(
-    '/auth/google-drive/callback',
+  //#region  cloud account
+  fastify.withTypeProvider<ZodTypeProvider>().post(
+    '/auth/google-drive',
     {
+      preHandler: authorizationMiddleware,
       schema: {
-        querystring: z.object({
+        body: z.object({
           code: z.string()
         })
       }
     },
     async (req, reply) => {
       try {
-        const { code } = req.query
+        const xRequestedWith = req.headers['x-requested-with']
 
-        const { tokens, userEmail } = await getAccountCloudInfo(code)
+        if (xRequestedWith !== 'XmlHttpRequest') {
+          return reply.status(400).send({ error: 'Invalid Request' })
+        }
+        if(!req.account) {
+          throw new BadRequestError('Credentials not provider')
+        }
+        const { uuid, email: emailAccount } = req.account
+        const { code } = req.body
+
+        const { tokens, userEmail: emailCloudAccount } = await getAccountCloudInfo(code)
+        console.log(tokens)
         if (!tokens || !tokens.access_token) {
           throw new UnprocessableEntityError('Tokens do Google inválidos.')
         }
@@ -253,7 +266,9 @@ export async function accountRoute (fastify: FastifyInstance) {
           ? new Date(tokens.expiry_date)
           : new Date()
         const cloudAccount = CloudAccount.create(
-          userEmail,
+          uuid,
+          emailAccount,
+          emailCloudAccount,
           'google-drive',
           tokens.access_token,
           expiryDate,
@@ -265,6 +280,7 @@ export async function accountRoute (fastify: FastifyInstance) {
           .status(200)
           .send({ message: 'Conta do Google Drive conectada com sucesso' })
       } catch (error) {
+        console.log(error)
         throw new InternalServerError(
           'Erro ao conectar a conta do Google Drive: ' + error
         )
@@ -275,29 +291,30 @@ export async function accountRoute (fastify: FastifyInstance) {
   fastify.withTypeProvider<ZodTypeProvider>().post(
     '/google-drive/list-files',
     {
+      preHandler: authorizationMiddleware,
       schema: {
         body: z.object({
-          userEmail: z.string().email(),
+          emailCloudAccount: z.string().email(),
           provider: z.string()
         })
       }
     },
     async (req, reply) => {
       try {
-        const { userEmail, provider } = req.body
-        if (!userEmail || !provider) {
-          throw new BadRequestError(
-            'O e-mail do usuário e o provedor são obrigatórios.'
-          )
+        if(!req.account) {
+          throw new BadRequestError('Credentials not provider')
         }
+        const { email: emailAccount } = req.account
+        const { emailCloudAccount, provider } = req.body
 
         const cloudAccountRepository = new CloudAccountRepositoryMongoose()
         const cloudAccount =
-          await cloudAccountRepository.findByUserEmailAndProvider(
-            userEmail,
+          await cloudAccountRepository.findByEmailAccountEmailCloudAccountAndProvider(
+            emailAccount,
+            emailCloudAccount,
             provider
           )
-        console.log(cloudAccount)
+
         if (!cloudAccount) {
           throw new NotFoundError(
             'Conta não encontrada com as credenciais fornecidas.'
@@ -334,4 +351,6 @@ export async function accountRoute (fastify: FastifyInstance) {
       }
     }
   )
+
+  //#endregion
 }

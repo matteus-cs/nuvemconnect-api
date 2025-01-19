@@ -4,7 +4,9 @@ import { UnprocessableEntityError } from '../utils/error-handle'
 
 export interface CloudAccountProps {
   _id: string
-  userEmail: string
+  uuidAccount: string
+  emailAccount: string
+  emailCloudAccount: string
   provider: string
   accessToken: string
   expiryDate: Date
@@ -23,7 +25,9 @@ export class CloudAccount {
   ) {
     this.props = {
       _id: props._id ?? randomUUID(),
-      userEmail: props.userEmail,
+      uuidAccount: props.uuidAccount,
+      emailAccount: props.emailAccount,
+      emailCloudAccount: props.emailCloudAccount,
       provider: props.provider,
       accessToken: props.accessToken,
       expiryDate: props.expiryDate,
@@ -33,7 +37,9 @@ export class CloudAccount {
   }
 
   public static create (
-    userEmail: string,
+    uuidAccount: string,
+    emailAccount: string,
+    emailCloudAccount: string,
     provider: string,
     accessToken: string,
     expiryDate: Date,
@@ -43,7 +49,9 @@ export class CloudAccount {
       throw new UnprocessableEntityError('Access or Refresh token is missing')
     }
     return new CloudAccount({
-      userEmail,
+      uuidAccount,
+      emailAccount,
+      emailCloudAccount,
       provider,
       accessToken,
       expiryDate,

@@ -9,9 +9,10 @@ interface UpdateData {
 }
 
 export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
-  async findByUserEmailAndProvider (userEmail: string, provider: string) {
+  async findByEmailAccountEmailCloudAccountAndProvider (emailAccount: string, emailCloudAccount: string, provider: string) {
     const cloudAccount = await CloudAccountModel.findOne({
-      userEmail,
+      emailAccount,
+      emailCloudAccount,
       provider
     }).exec()
     return cloudAccount ? cloudAccount.toObject() : null
@@ -20,7 +21,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
   async create (cloudAccount: CloudAccount) {
     const {
       _id,
-      userEmail,
+      emailAccount,
+      emailCloudAccount,
       provider,
       accessToken,
       expiryDate,
@@ -29,7 +31,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
     } = cloudAccount.getProps()
     const newCloudAccount = new CloudAccountModel({
       _id,
-      userEmail,
+      emailAccount,
+      emailCloudAccount,
       provider,
       accessToken,
       expiryDate,
@@ -57,7 +60,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
   async save (cloudAccount: CloudAccount) {
     const {
       _id,
-      userEmail,
+      emailAccount,
+      emailCloudAccount,
       provider,
       accessToken,
       expiryDate,
@@ -69,7 +73,8 @@ export class CloudAccountRepositoryMongoose implements ICloudAccountRepository {
       { _id },
       {
         _id,
-        userEmail,
+        emailAccount,
+        emailCloudAccount,
         provider,
         accessToken,
         expiryDate,

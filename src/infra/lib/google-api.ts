@@ -9,7 +9,7 @@ interface GoogleUser {
 export const oauth2ClientDrive = new google.auth.OAuth2({
   clientId: process.env.CLIENT_ID,
   clientSecret: process.env.CLIENT_SECRET_KEY,
-  redirectUri: process.env.GOOGLE_REDIRECT_URL_DRIVE
+  redirectUri: 'postmessage'
 })
 
 export const oauth2Client = new google.auth.OAuth2({

@@ -31,7 +31,7 @@ export class App {
     this.server.register(cors, {
       origin: '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'accept', 'api_key']
+      allowedHeaders: ['Content-Type', 'Authorization', 'accept', 'api_key', 'x-requested-with']
     })
     this.server.setSerializerCompiler(serializerCompiler)
     this.server.setValidatorCompiler(validatorCompiler)
