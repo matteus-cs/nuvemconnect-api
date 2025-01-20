@@ -1,29 +1,24 @@
 import jwt from 'jsonwebtoken'
 import { BadRequestError, ErrorHandle } from '../../domain/utils/error-handle'
+import { JWT_SECRET_KEY } from '../config/env'
 
 interface TokenPayload {
   uuid: string
   email: string
 }
 
+const secretKey = JWT_SECRET_KEY
+
 function generateToken (
   payload: TokenPayload,
   expiresIn: string = '1h'
 ): string {
-  const secretKey = process.env.JWT_SECRET_KEY
 
-  if (!secretKey) {
-    throw new Error('Missing JWT_SECRET_KEY environment variable')
-  }
   return jwt.sign(payload, secretKey, { expiresIn })
 }
 
 async function verifyToken (token: string): Promise<TokenPayload | ErrorHandle> 
 {
-  const secretKey = process.env.JWT_SECRET_KEY
-  if (!secretKey) {
-    throw new Error('Missing JWT_SECRET_KEY environment variable')
-  }
   try {
     const result = jwt.verify(token, secretKey)
     if(typeof result !== 'object' || !result.uuid || !result.email)

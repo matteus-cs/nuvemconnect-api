@@ -1,21 +1,22 @@
 import { google, drive_v3 } from 'googleapis'
 import { GaxiosResponse } from 'gaxios'
 import 'dotenv/config'
+import { googleEnv } from '../config/env'
 
 interface GoogleUser {
   emailAddress: string
 }
 
 export const oauth2ClientDrive = new google.auth.OAuth2({
-  clientId: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET_KEY,
-  redirectUri: 'postmessage'
+  clientId: googleEnv.CLIENT_ID,
+  clientSecret: googleEnv.CLIENT_SECRET_KEY,
+  redirectUri: googleEnv.GOOGLE_REDIRECT_URL_DRIVE
 })
 
 export const oauth2Client = new google.auth.OAuth2({
-  clientId: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET_KEY,
-  redirectUri: process.env.GOOGLE_REDIRECT_URL
+  clientId: googleEnv.CLIENT_ID,
+  clientSecret: googleEnv.CLIENT_SECRET_KEY,
+  redirectUri: googleEnv.GOOGLE_REDIRECT_URL
 })
 
 // Função para obter as informações do usuário

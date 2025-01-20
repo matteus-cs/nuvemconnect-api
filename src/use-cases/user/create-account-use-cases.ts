@@ -3,6 +3,7 @@ import { IAccountRepository } from '../../domain/repositories/account-repository
 import { SendMail } from '../../domain/shared/send-email'
 import { UnprocessableEntityError } from '../../domain/utils/error-handle'
 import 'dotenv/config'
+import { urlsEnv } from '../../infra/config/env'
 
 interface RequestCreateAccount {
   name: string
@@ -73,7 +74,7 @@ export class CreateAccountUseCase {
   
                   <p style="font-size: 0.875rem; margin: 0 0 1.875rem 0;">Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.</p>
                   
-                 <a href="${process.env.URL_API}/account/activate/${account.uuid}" style="background-color: #1D89DA; margin: 0 auto; padding: 1rem 4.5625rem; border-radius: 6.25rem; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 1.125rem; line-height: 1.125rem; display: inline-block; text-align: center;">
+                 <a href="${urlsEnv.URL_API}/account/activate/${account.uuid}" style="background-color: #1D89DA; margin: 0 auto; padding: 1rem 4.5625rem; border-radius: 6.25rem; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 1.125rem; line-height: 1.125rem; display: inline-block; text-align: center;">
                     CONFIRMAR EMAIL
                   </a>
   
