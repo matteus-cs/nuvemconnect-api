@@ -77,7 +77,8 @@ export async function manageOauthTokens (
     access_token: accessToken,
     refresh_token: refreshToken
   })
-  const tokenIsValid =
+
+  /* const tokenIsValid =
     oauth2ClientDrive.credentials.expiry_date &&
     oauth2ClientDrive.credentials.expiry_date > Date.now()
 
@@ -92,28 +93,22 @@ export async function manageOauthTokens (
       : new Date()
 
     return { credentials, newExpiryDate }
-  }
+  } */
 }
 
-export async function listFiles () {
+export async function listFiles (pageSize?: number, orderBy?: string, nextPageToken?: string ) {
   const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
 
   let allFiles: drive_v3.Schema$File[] = []
+  const response: GaxiosResponse<drive_v3.Schema$FileList> =
+    await drive.files.list({
+      pageSize: pageSize ?? 10,
+      orderBy,
+      fields: 'nextPageToken, files(id, name, mimeType)',
+      pageToken: nextPageToken
+    })
 
-  let nextPageToken
-  do {
-    const response: GaxiosResponse<drive_v3.Schema$FileList> =
-      await drive.files.list({
-        pageSize: 100,
-        orderBy: 'name',
-        fields: 'nextPageToken, files(id, name, mimeType)',
-        pageToken: nextPageToken
-      })
-
-    const files = response.data.files || []
-    allFiles = allFiles.concat(files)
-    nextPageToken = response.data.nextPageToken || undefined
-  } while (nextPageToken)
-
-  return allFiles
+  const files = response.data.files || []
+  allFiles = allFiles.concat(files)
+  return { files: allFiles, nextPageToken: response.data.nextPageToken ?? null }
 }

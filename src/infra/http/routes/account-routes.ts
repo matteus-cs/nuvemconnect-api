@@ -293,6 +293,12 @@ export async function accountRoute (fastify: FastifyInstance) {
     {
       preHandler: authorizationMiddleware,
       schema: {
+        querystring: z.object({
+          pageSize: z.coerce.number().min(10).max(100).optional(),
+          orderBy: z.string().optional(),
+          nextPageToken: z.string().optional()
+        }),
+
         body: z.object({
           emailCloudAccount: z.string().email(),
           provider: z.string()
@@ -321,7 +327,7 @@ export async function accountRoute (fastify: FastifyInstance) {
           )
         }
 
-        const response = await manageOauthTokens(
+        /* const response = await manageOauthTokens(
           cloudAccount.accessToken,
           cloudAccount.refreshToken
         )
@@ -330,19 +336,15 @@ export async function accountRoute (fastify: FastifyInstance) {
           response?.credentials.access_token as string,
           response?.credentials.refresh_token as string,
           response?.newExpiryDate
+        ) */
+
+        await manageOauthTokens(
+          cloudAccount.accessToken,
+          cloudAccount.refreshToken
         )
 
-        const files = await listFiles()
-
-        // const drive = google.drive({ version: 'v3', auth: oauth2ClientDrive })
-
-        // const res = await drive.files.list({
-        //   pageSize: 10,
-        //   fields: 'nextPageToken, files(id, name)'
-        // })
-
-        // reply.status(200).send(res.data.files)
-
+        const { pageSize, orderBy, nextPageToken } = req.query
+        const files = await listFiles(pageSize, orderBy, nextPageToken)
         reply.status(200).send(files)
       } catch (error) {
         throw new InternalServerError(
@@ -351,6 +353,5 @@ export async function accountRoute (fastify: FastifyInstance) {
       }
     }
   )
-
   //#endregion
 }
