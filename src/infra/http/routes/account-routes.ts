@@ -181,18 +181,18 @@ export async function accountRoute (fastify: FastifyInstance) {
   )
 
   fastify.withTypeProvider<ZodTypeProvider>().post(
-    '/login/google',
+    '/account/google/login',
     {
       schema: {
         body: z.object({
-          code: z.string()
+          idToken: z.string()
         })
       }
     },
     async (req, reply) => {
-      const { code } = req.body
+      const { idToken } = req.body
       const token = await oauth2Client.verifyIdToken({
-        idToken: code,
+        idToken,
         audience: process.env.CLIENT_ID
       })
       const tokenInfo = token.getPayload()
@@ -234,7 +234,7 @@ export async function accountRoute (fastify: FastifyInstance) {
 
   //#region  cloud account
   fastify.withTypeProvider<ZodTypeProvider>().post(
-    '/auth/google-drive',
+    '/google-drive/auth',
     {
       preHandler: authorizationMiddleware,
       schema: {
@@ -278,7 +278,7 @@ export async function accountRoute (fastify: FastifyInstance) {
 
         reply
           .status(200)
-          .send({ message: 'Conta do Google Drive conectada com sucesso' })
+          .send()
       } catch (error) {
         console.log(error)
         throw new InternalServerError(
@@ -323,7 +323,7 @@ export async function accountRoute (fastify: FastifyInstance) {
 
         if (!cloudAccount) {
           throw new NotFoundError(
-            'Conta não encontrada com as credenciais fornecidas.'
+            'Cloud account not found.'
           )
         }
 
@@ -348,7 +348,7 @@ export async function accountRoute (fastify: FastifyInstance) {
         reply.status(200).send(files)
       } catch (error) {
         throw new InternalServerError(
-          'Erro ao buscar os arquivos do Google Drive: ' + error
+          'Error retrieving files from Google Drive: ' + error
         )
       }
     }
