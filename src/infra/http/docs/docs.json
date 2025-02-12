@@ -288,47 +288,186 @@
         }
       }
     },
-    "/login/google": {
-      "get": {
+    "/account/google/login": {
+      "post": {
         "summary": "Google OAuth Login",
         "description": "Redirects the user to Google's login page to grant permission for email and profile access.",
-        "responses": {
-          "302": {
-            "description": "Redirects to Google's OAuth2 authorization URL."
+        "tags": ["Account"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema":{
+                "type": "object",
+                "properties": {
+                  "idToken": {
+                    "type": "string"
+                  }
+                },
+                "required": ["idToken"]
+              }
+            }
           }
-        }
-      }
-    },
-    "/auth/google/callback": {
-      "get": {
-        "summary": "Google OAuth Callback",
-        "description": "Handles the Google OAuth2 callback, exchanging the authorization code for access and refresh tokens. If the user does not exist, a new account is created.",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "code",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The authorization code returned by Google after login."
-          }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "Successful authentication. Returns an access token.",
+            "description": "access token da api",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "accessToken": {
-                      "type": "string",
-                      "description": "The JWT access token for the authenticated user."
+                      "type": "string"
                     }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/google-drive/auth": {
+      "post": {
+        "summary": "Google OAuth",
+        "description": "add uma conta da nuvem do google-drive",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "description": "authorization code",
+                    "type": "string"
+                  }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cloud account added successfully."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "description": "Internal server error occurred while processing the login or creating a new account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "An error occurred while processing the request."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/google-drive/list-files": {
+      "get": {
+        "summary": "Google OAuth",
+        "description": "add uma conta da nuvem do google-drive",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pageSize",
+            "schema":{
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "orderBy",
+            "schema":{
+              "type": "number"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "nextPageToken",
+            "schema":{
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emailCloudAccount": {
+                    "description": "authorization code",
+                    "type": "string"
                   },
-                  "example": {
-                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  "provider": {
+                    "description": "provider of cloud",
+                    "type": "string",
+                    "example": "google-drive"
+                  }
+                },
+                "required": ["emailCloudAccount", "provider"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cloud account added successfully.",
+            "content": {
+              "application/json": {
+                "schema":{
+                  "type": "object",
+                  "properties": {
+                    "files":{
+                      "type": "array",
+                      "items" :{
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "mimeType": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -481,6 +620,14 @@
             "type": "string"
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "bearer {token}",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }
